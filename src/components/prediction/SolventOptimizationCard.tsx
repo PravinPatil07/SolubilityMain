@@ -2,7 +2,7 @@ import { SolventOptimization } from "@/types/prediction";
 import { Beaker, TrendingUp, TrendingDown, Minus } from "lucide-react";
 
 interface SolventOptimizationCardProps {
-  solvents: SolventOptimization[];
+  solvents: Record<string, any>; // Changed to accept object instead of array
 }
 
 function getImprovementColor(improvement: number) {
@@ -27,7 +27,30 @@ function getCategoryBadge(category: string | undefined) {
 }
 
 export function SolventOptimizationCard({ solvents }: SolventOptimizationCardProps) {
-  if (!solvents || !Array.isArray(solvents) || solvents.length === 0) return null;
+  // Convert object to array for rendering if needed
+  let solventsArray: Array<{
+    solvent: string;
+    predicted_solubility: number;
+    category: string;
+    improvement_percentage: number;
+  }> = [];
+
+  if (solvents && typeof solvents === 'object') {
+    if (Array.isArray(solvents)) {
+      // Already an array
+      solventsArray = solvents;
+    } else {
+      // Convert object to array
+      solventsArray = Object.entries(solvents).map(([key, value]) => ({
+        solvent: key.replace(/_/g, " ").toUpperCase(),
+        predicted_solubility: value.solubility_mg_ml || value.predicted_solubility || 0,
+        category: value.category || value.solubility_category || "Unknown",
+        improvement_percentage: value.improvement_percentage || value.improvement_percent || 0
+      }));
+    }
+  }
+
+  if (!solventsArray || solventsArray.length === 0) return null;
 
   return (
     <div className="card-scientific p-6">
@@ -39,7 +62,7 @@ export function SolventOptimizationCard({ solvents }: SolventOptimizationCardPro
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {solvents.map((solvent) => {
+        {solventsArray.map((solvent) => {
           const ImprovementIcon = getImprovementIcon(solvent.improvement_percentage);
           const improvementColor = getImprovementColor(solvent.improvement_percentage);
           const categoryBadge = getCategoryBadge(solvent.category);
